@@ -149,7 +149,7 @@ def build_dual_season_composite(
     """
     Combina composites de seca e chuva + features de amplitude sazonal (30 bandas).
 
-    A estação chuvosa de MT (~Nov–Mar) tem muito mais nuvem que a seca, por isso
+    A estação chuvosa de MT (~Nov-Mar) tem muito mais nuvem que a seca, por isso
     max_cloud_wet default é mais alto (40%) — a mediana sobre muitas cenas absorve
     os pixels residuais de nuvem. Verifique a contagem de cenas da chuva no notebook.
 
