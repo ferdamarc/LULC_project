@@ -1,0 +1,24 @@
+name: lulc-project
+channels:
+  - conda-forge   # preferred for geospatial — pre-builds GDAL/Proj/Fiona with correct native libs
+  - defaults
+dependencies:
+  - python=3.11
+  # numpy <2.0: breaking C-API changes in 2.0 still afetam rasterio/fiona/geopandas internals
+  - numpy>=1.24,<2.0
+  - pandas>=2.0
+  - geopandas>=1.0     # conda-forge resolve GDAL/Fiona/Pyproj automaticamente
+  - shapely>=2.0
+  - matplotlib>=3.8
+  - seaborn>=0.13
+  - scikit-learn>=1.5
+  - xgboost>=2.0
+  - jupyter
+  - ipykernel
+  - ipywidgets>=8.0    # necessário para mapas interativos do geemap em Jupyter local
+  - pip
+  - pip:
+      # earthengine-api e geemap via pip: versões no conda-forge ficam semanas atrasadas
+      # do PyPI, e o GEE Python SDK tem releases frequentes com bugfixes importantes
+      - earthengine-api>=0.1.390
+      - geemap>=0.32

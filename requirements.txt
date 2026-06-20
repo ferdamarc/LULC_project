@@ -1,0 +1,15 @@
+# Espelho do environment.yml para uso no Google Colab (pip install -r requirements.txt)
+# Colab (Python 3.11) já vem com numpy/pandas/matplotlib/sklearn pré-instalados —
+# as linhas abaixo garantem versões mínimas compatíveis com o restante do stack.
+
+earthengine-api>=0.1.390
+geemap>=0.32
+geopandas>=1.0
+shapely>=2.0
+pandas>=2.0
+"numpy>=1.24,<2.0"
+scikit-learn>=1.5
+xgboost>=2.0
+matplotlib>=3.8
+seaborn>=0.13
+ipywidgets>=8.0

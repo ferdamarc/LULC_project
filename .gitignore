@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb~
+
+# Conda / virtualenv
+.env
+*.env
+
+# Outputs gerados (não versionar dados pesados; versionamos só código e configuração)
+outputs/figuras/*.png
+outputs/figuras/*.jpg
+outputs/metricas/*.csv
+outputs/metricas/*.json
+
+# Credenciais GEE (nunca versionar)
+.config/
+credentials
+*credentials*.json
+service_account*.json
+
+# OS
+.DS_Store
+Thumbs.db
