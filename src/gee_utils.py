@@ -70,6 +70,38 @@ def add_spectral_indices(image):
     return image.addBands([ndvi, ndwi, evi, savi])
 
 
+def load_mapbiomas(aoi, mb_from, mb_to, year=2023):
+    """
+    Carrega MapBiomas Collection 9, seleciona o ano, reclassifica para as classes
+    do projeto e recorta para a AOI.
+
+    Verifique o asset ID em https://developers.google.com/earth-engine/datasets
+    se a coleção estiver indisponível — o MapBiomas atualiza periodicamente.
+
+    Args:
+        aoi:      ee.Geometry — área de estudo
+        mb_from:  list[int]  — códigos MapBiomas originais (gerado de LULC_CLASSES)
+        mb_to:    list[int]  — códigos do projeto correspondentes
+        year:     int        — ano a selecionar (default 2023)
+
+    Returns:
+        ee.Image com banda 'lulc' contendo valores 1–6 (pixels sem classe = mascarados).
+    """
+    asset_id = (
+        'projects/mapbiomas-public/assets/brazil/lulc/collection9'
+        '/mapbiomas_collection90_integration_v1'
+    )
+    raw = ee.Image(asset_id).select(f'classification_{year}')
+
+    reclassified = (
+        raw
+        .remap(mb_from, mb_to, defaultValue=0)
+        .rename('lulc')
+    )
+    # Mascara pixels cujo código original não está em mb_from (defaultValue=0)
+    return reclassified.updateMask(reclassified.neq(0)).clip(aoi)
+
+
 def build_s2_composite(aoi, start_date, end_date, max_cloud_pct=20):
     """
     Carrega a coleção COPERNICUS/S2_SR_HARMONIZED, filtra por AOI, período e
