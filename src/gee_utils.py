@@ -2,12 +2,13 @@
 gee_utils.py — Utilitários server-side para Google Earth Engine.
 Etapa 3: mask_s2_clouds, build_s2_composite
 Etapa 4: add_spectral_indices
-Etapa 5: load_mapbiomas  (implementado na Etapa 5)
+Etapa 5: load_mapbiomas
+Etapa 10 (melhoria): build_dual_season_composite, DUAL_SEASON_BANDS
 """
 import ee
 
-# Bandas que compõem o stack de features do classificador.
-# Ordem importa: sampleRegions preserva essa ordem na tabela de amostras.
+# Bandas-base de uma única estação (10 espectrais + 4 índices).
+# Ordem importa: stratifiedSample preserva essa ordem na tabela de amostras.
 FEATURE_BANDS = [
     'B2', 'B3', 'B4',          # Azul, Verde, Vermelho (10 m)
     'B5', 'B6', 'B7', 'B8A',   # Red Edge (20 m → GEE faz upsample para 10 m na composição)
@@ -15,6 +16,16 @@ FEATURE_BANDS = [
     'B11', 'B12',               # SWIR 1 e 2 (20 m)
     'NDVI', 'NDWI', 'EVI', 'SAVI',
 ]
+
+# Bandas da composição de dupla estação (Etapa 10):
+#   14 da seca (_dry) + 14 da chuva (_wet) + 2 de amplitude sazonal = 30 bandas.
+# A amplitude (wet - dry) é a feature mais discriminante para LULC tropical:
+#   Agricultura tem amplitude alta (solo nu → soja verde); Solo Exposto ~0; Cerrado intermediária.
+DUAL_SEASON_BANDS = (
+    [f'{b}_dry' for b in FEATURE_BANDS]
+    + [f'{b}_wet' for b in FEATURE_BANDS]
+    + ['NDVI_amp', 'EVI_amp']
+)
 
 
 def mask_s2_clouds(image):
@@ -124,3 +135,40 @@ def build_s2_composite(aoi, start_date, end_date, max_cloud_pct=20):
         .median()
         .clip(aoi)
     )
+
+
+def _seasonal_composite(aoi, start_date, end_date, suffix, max_cloud_pct):
+    """Composite mediana de uma estação, com as 14 bandas-base renomeadas com sufixo."""
+    composite = build_s2_composite(aoi, start_date, end_date, max_cloud_pct)
+    return composite.rename([f'{b}_{suffix}' for b in FEATURE_BANDS])
+
+
+def build_dual_season_composite(
+    aoi, dry_dates, wet_dates, max_cloud_dry=20, max_cloud_wet=40,
+):
+    """
+    Combina composites de seca e chuva + features de amplitude sazonal (30 bandas).
+
+    A estação chuvosa de MT (~Nov–Mar) tem muito mais nuvem que a seca, por isso
+    max_cloud_wet default é mais alto (40%) — a mediana sobre muitas cenas absorve
+    os pixels residuais de nuvem. Verifique a contagem de cenas da chuva no notebook.
+
+    Args:
+        aoi:           ee.Geometry
+        dry_dates:     (start, end) da seca, ex: ('2023-06-01', '2023-09-30')
+        wet_dates:     (start, end) da chuva, ex: ('2023-12-01', '2024-03-31')
+        max_cloud_dry: limiar de nuvem para a seca
+        max_cloud_wet: limiar de nuvem para a chuva (mais alto por padrão)
+
+    Returns:
+        ee.Image com as bandas listadas em DUAL_SEASON_BANDS.
+    """
+    dry = _seasonal_composite(aoi, dry_dates[0], dry_dates[1], 'dry', max_cloud_dry)
+    wet = _seasonal_composite(aoi, wet_dates[0], wet_dates[1], 'wet', max_cloud_wet)
+    combined = dry.addBands(wet)
+
+    # Amplitude sazonal: diferença chuva − seca dos índices de vegetação
+    ndvi_amp = combined.select('NDVI_wet').subtract(combined.select('NDVI_dry')).rename('NDVI_amp')
+    evi_amp  = combined.select('EVI_wet').subtract(combined.select('EVI_dry')).rename('EVI_amp')
+
+    return combined.addBands([ndvi_amp, evi_amp]).clip(aoi)
