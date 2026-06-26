@@ -16,6 +16,7 @@ __pycache__/
 outputs/figuras/*.png
 outputs/figuras/*.jpg
 outputs/metricas/*.csv
+outputs/metricas/*.pkl
 outputs/metricas/*.json
 
 # Credenciais GEE (nunca versionar)
